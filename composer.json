@@ -1,0 +1,32 @@
+{
+    "name": "wyang14/laravel-web3-storage",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "William",
+            "email": "william_801022@hotmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/app/"
+        }
+    },
+    "require": {
+        "illuminate/support": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5.10"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "App\\Web3\\Storage\\APIClientServiceProvider"
+            ],
+            "aliases": {
+            }
+        }
+    }
+}
