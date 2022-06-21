@@ -38,6 +38,18 @@ class APIClient
         return $cid;
     }
 
+    public function getStatus($apiKey, $cid)
+    {
+        $response = Http::withHeaders([
+            "Authorization" => $this->getAuthorizationHeaderValue($apiKey)
+        ])->get(APIClient::DOMAIN . "/status/" . $cid)->json();
+
+        $cid = Arr::get($response, "cid");
+        $dagSize = Arr::get($response, "dagSize");
+        $created = Arr::get($response, "created");
+        return [$cid, $dagSize, $created];
+    }
+
     private function getAuthorizationHeaderValue($apiKey)
     {
         return "Bearer " . $apiKey;
