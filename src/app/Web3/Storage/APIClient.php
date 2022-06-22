@@ -2,24 +2,31 @@
 
 namespace App\Web3\Storage;
 
+use App\Web3\Storage\Exceptions\APIException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 
-class APIClient
+class APIClient implements APIClientInterface
 {
     const DOMAIN = "https://api.web3.storage";
 
+    private $proxy;
+
+    public function __construct()
+    {
+        $this->proxy = new APIClientProxy();
+    }
+
     public function getList($apiKey)
     {
-        $response = Http::withHeaders([
-            "Authorization" => $this->getAuthorizationHeaderValue($apiKey)
-        ])->get(APIClient::DOMAIN . "/user/uploads")->json();
-
         $stored_files = [];
-        foreach ($response as $item) {
-            $cid = $item["cid"];
-            $ipfs_link = "https://ipfs.io/ipfs/{$cid}/";
-            $stored_files[] = $ipfs_link;
+        try {
+            $stored_files = $this->proxy->getList($apiKey);
+        } catch (\Exception $exception) {
+            if (($exception instanceof APIException) && $exception->getStatusCode() == 429) {
+                sleep(10);
+                $stored_files = $this->proxy->getList($apiKey);
+            }
         }
 
         return $stored_files;
@@ -27,14 +34,15 @@ class APIClient
 
     public function upload($apiKey, $fileContent, $fileName)
     {
-        $response = Http::withHeaders([
-            "Authorization" => $this->getAuthorizationHeaderValue($apiKey)
-        ])->attach("file", $fileContent, $fileName)
-            ->post(APIClient::DOMAIN . "/upload")
-            ->json();
-
-        $cid = Arr::get($response, "cid");
-        $ipfs_link = "https://ipfs.io/ipfs/{$cid}/{$fileName}";
+        $cid = null;
+        try {
+            $cid = $this->proxy->upload($apiKey, $fileContent, $fileName);
+        } catch (\Exception $exception) {
+            if (($exception instanceof APIException) && $exception->getStatusCode() == 429) {
+                sleep(10);
+                $cid = $this->proxy->upload($apiKey, $fileContent, $fileName);
+            }
+        }
         return $cid;
     }
 
@@ -47,7 +55,17 @@ class APIClient
         $cid = Arr::get($response, "cid");
         $dagSize = Arr::get($response, "dagSize");
         $created = Arr::get($response, "created");
-        return [$cid, $dagSize, $created];
+
+        $return_array = null;
+        try {
+            $return_array = $this->proxy->getStatus($apiKey, $cid);
+        } catch (\Exception $exception) {
+            if (($exception instanceof APIException) && $exception->getStatusCode() == 429) {
+                sleep(10);
+                $return_array = $this->proxy->getStatus($apiKey, $cid);
+            }
+        }
+        return $return_array;
     }
 
     private function getAuthorizationHeaderValue($apiKey)
