@@ -15,10 +15,10 @@
         }
     },
     "require": {
-        "illuminate/support": "*"
+        "guzzlehttp/guzzle": "7.4.x-dev"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.5.10"
+        "phpunit/phpunit": "10.0.x-dev"
     },
     "extra": {
         "laravel": {
